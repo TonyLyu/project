@@ -3,7 +3,7 @@ import cv2
 
 GAUSSIAN_SMOOTH_FILTER_SIZE = (5, 5)
 ADAPTIVE_THRESH_BLOCK_SIZE = 19
-ADAPTIVE_THRESH_WEIGHT = 9
+ADAPTIVE_THRESH_WEIGHT = 5
 
 def maximizeContrast(imgGrayscale):
 
@@ -21,22 +21,20 @@ def maximizeContrast(imgGrayscale):
     imgGrayscalePlusTopHatMinusBlackHat = cv2.subtract(imgGrayscalePlusTopHat, imgBlackHat)
 
     return imgGrayscalePlusTopHatMinusBlackHat
+def preprocess(original_image):
 
-original_image = cv2.imread("1.png",1)
-height, width, colorchannel = original_image.shape
-imgHSV = np.zeros((height, width, 3), np.uint8)
-imgHSV = cv2.cvtColor(original_image, cv2.COLOR_BGR2HSV)
-imgHue, imgSaturation, imgValue = cv2.split(imgHSV)
+	height, width, colorchannel = original_image.shape
+	imgHSV = np.zeros((height, width, 3), np.uint8)
+	imgHSV = cv2.cvtColor(original_image, cv2.COLOR_BGR2HSV)
+	imgHue, imgSaturation, imgValue = cv2.split(imgHSV)
 
-imgMaxContrastGrayscale = maximizeContrast(imgValue)
+	imgMaxContrastGrayscale = maximizeContrast(imgValue)
 
-imgBlur = np.zeros((height, width, 1), np.uint8)
-imgBlur = cv2.GaussianBlur(imgMaxContrastGrayscale, GAUSSIAN_SMOOTH_FILTER_SIZE, 0)
-imgThresh = cv2.adaptiveThreshold(imgBlur, 255.0, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_WEIGHT)
+	imgBlur = np.zeros((height, width, 1), np.uint8)
+	imgBlur = cv2.GaussianBlur(imgMaxContrastGrayscale, GAUSSIAN_SMOOTH_FILTER_SIZE, 0)
+	imgThresh = cv2.adaptiveThreshold(imgBlur, 255.0, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_WEIGHT)
+
+	return imgValue, imgThresh
 
 
-cv2.imshow('image', imgValue)
-cv2.imshow('image', imgThresh)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
