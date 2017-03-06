@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( findplates )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( findplates find_plates.cpp )
+target_link_libraries( findplates ${OpenCV_LIBS} )
