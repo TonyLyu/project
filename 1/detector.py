@@ -1,10 +1,9 @@
 import cv2
-import bin
 
 def find_plates(img, maxWidth, maxHeight):
     img = cv2.equalizeHist(img)
     plate_cascade = cv2.CascadeClassifier('us.xml')
-    plate_image = plate_cascade.detectMultiScale(img,  scaleFactor=1.1, minNeighbors=3, flags=0, minSize=(100, 100),
+    plate_image = plate_cascade.detectMultiScale(img,  scaleFactor=1.1, minNeighbors=3, flags=0, minSize=(70, 35),
                                                  maxSize=(maxWidth, maxHeight))
     return plate_image
 
@@ -69,10 +68,23 @@ def detect(img):
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
             cv2.imshow('img', img)
             text_img = grayimg[y:y + h, x:x + w]
+            text_img = cv2.resize(text_img, dsize=(120, 60))
             imglist.append(text_img)
     return imglist
 
-
+# def resize(img, grayimg, regions):
+#     rows, columns = grayimg.shape
+#     w = columns
+#     h = rows
+#     new_regions = []
+#     for region in regions:
+#         o_region = expandRect(region, 0, 0, w, h)
+#         new_regions.append(o_region)
+#     for (x, y, w, h) in new_regions:
+#         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+#         text_img = grayimg[y:y + h, x:x + w]
+#         res = cv2.resize(text_img, dsize=(120, 60))
+#     return res
 
 
 
