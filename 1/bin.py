@@ -8,14 +8,15 @@ def calcLocalStats(im, map_m, map_s, winx, winy):
     wxh = winx/2
     wyh = winy/2
     x_firstth = wxh
-    y_lastth = rows - wyh - 1;
+    y_lastth = rows - wyh - 1
     y_firstth = wyh
     winarea = float(winx * winy)
 
     max_s = 0
     j = y_firstth
-    while(j <= y_lastth):
-        sum = sum_q = 0
+    for j in range(y_firstth, y_lastth+1):
+        sum = 0.0
+        sum_sq = 0.0
         sum = im_sum.item(j-wyh+winy, winx) - im_sum.item(j-wyh, winx) - im_sum.item(j-wyh+winy, 0) + im_sum.item(j-wyh, 0)
         sum_sq = im_sum_sq.item(j-wyh+winy, winx) - im_sum_sq.item(j-wyh, winx) - im_sum_sq.item(j-wyh+winy, 0) + im_sum_sq.item(j-wyh, 0)
         m = sum / winarea
@@ -24,26 +25,25 @@ def calcLocalStats(im, map_m, map_s, winx, winy):
             max_s = s
         map_m.itemset((j, x_firstth), m)
         map_s.itemset((j, x_firstth), s)
-        maxrange = im.shape[1] - winx + 1
+        maxrange = cols - winx + 1
         for i in range(1, maxrange):
             sum -= im_sum.item(j-wyh+winy, i) - im_sum.item(j-wyh, i) - im_sum.item(j-wyh+winy, i-1) \
                    + im_sum.item(j-wyh, i-1)
-            sum += im_sum.item(j - wyh + winy, i + winx) - im_sum.item(j - wyh, i + winx) \
-                   - im_sum.item(j - wyh + winy, i + winx - 1) + im_sum.item(j - wyh, i + winx - 1)
+            sum += im_sum.item(j - wyh + winy, i + winx) - im_sum.item(j - wyh, i + winx) - im_sum.item(j - wyh + winy, i + winx - 1) + im_sum.item(j - wyh, i + winx - 1)
 
-            sum_sq -= im_sum_sq.item(j - wyh + winy, i) - im_sum_sq.item(j - wyh, i) - im_sum_sq.item(j - wyh, i - 1)
-            sum_sq += im_sum_sq.item(j - wyh + winy, i + winx) - im_sum_sq.item(j - wyh, i + winx) \
-                      - im_sum_sq.item(j - wyh + winy, i + winx - 1) + im_sum_sq.item(j - wyh, i + winx - 1)
+            sum_sq -= im_sum_sq.item(j - wyh + winy, i) - im_sum_sq.item(j - wyh, i) - im_sum_sq.item(j - wyh + winy, i - 1) + im_sum_sq.item(j-wyh, i-1)
+            sum_sq += im_sum_sq.item(j - wyh + winy, i + winx) - im_sum_sq.item(j - wyh, i + winx) - im_sum_sq.item(j - wyh + winy, i + winx - 1) + im_sum_sq.item(j - wyh, i + winx - 1)
             m = sum / winarea
             s = math.sqrt(abs(sum_sq - m*sum) / winarea)
             if s > max_s:
                 max_s = s
             map_m.itemset((j, i+wxh), m)
             map_s.itemset((j, i+wxh), s)
-        j = j + 1
-    return max_s
+    return max_s, map_m, map_s, im
 
 def Wolf(img, version, winx, winy, k, dR):
+    m = 0.0
+    max_s = 0.0
     th = 0
     wxh = winx / 2
     wyh = winy / 2
@@ -52,21 +52,28 @@ def Wolf(img, version, winx, winy, k, dR):
     y_lastth = img.shape[0] - wyh - 1
     y_firstth = wyh
 
-
     rows, cols = img.shape[:2]
-    output = np.zeros((rows, cols), np.uint8)
+    #output = np.zeros((rows, cols), np.uint8)
+    output = np.uint8(img)
+    print img.dtype
     print rows, cols
     map_m = np.zeros((rows, cols), dtype=float)
     map_s = np.zeros((rows, cols), dtype=float)
-    max_s = calcLocalStats(img, map_m, map_s, winx, winy)
-
+    max_s, map_m, map_s, img = calcLocalStats(img, map_m, map_s, winx, winy)
+    print max_s
     #Finds the global minimum and maximum in an array
     min_I, max_I, _, _ = cv2.minMaxLoc(img)
-
+    print max_I
+    #
+    # for i in range(0, map_s.shape[0]):
+    #     for j in range(0, map_s.shape[1]):
+    #         print map_s.item(i, j)
+    # map_s = np.uint8(map_s)
+    # cv2.imshow('12', map_s)
     thsurf = np.zeros((rows, cols), dtype=float)
     for j in range(y_firstth, y_lastth+1):
         for i in range(0, cols - winx + 1):
-            m = map_m.item(j, i+wxh)
+            m = float(map_m.item(j, i+wxh))
             s = float(map_s.item(j, i+wxh))
             if version == 1:
                 th = m + k*s
@@ -74,18 +81,21 @@ def Wolf(img, version, winx, winy, k, dR):
                 th = m * (1 + k*(s / dR - 1))
             else:
                 th = m + k * (s / max_s - 1) * (m-min_I)
+                print k
             thsurf.itemset((j, i+wxh), th)
             if i == 0:
                 for l in range(0, x_firstth+1):
                     thsurf.itemset((j, l), th)
                 if j == y_firstth:
                     for u in range(0, y_firstth):
-                        for k in range(0, x_firstth+1):
-                            thsurf.itemset((u, k), th)
+                        for t in range(0, x_firstth+1):
+                            thsurf.itemset((u, t), th)
                 if j == y_lastth:
                     for u in range(y_lastth+1, rows):
                         for l in range(0, x_firstth+1):
                             thsurf.itemset((u, l), th)
+
+
             if j == y_firstth:
                 for u in range(0, y_firstth):
                     thsurf.itemset((u, i+wxh), th)
@@ -98,19 +108,19 @@ def Wolf(img, version, winx, winy, k, dR):
         #right-upper corner
         if j == y_firstth:
             for u in range(0, y_firstth):
-                for i in range(x_lastth, cols):
-                    thsurf.itemset((u, i), th)
+                for l in range(x_lastth, cols):
+                    thsurf.itemset((u, l), th)
         #right-lower corner
         if j == y_lastth:
             for u in range(y_lastth+1, rows):
-                for i in range(x_lastth, cols):
-                    thsurf.itemset((u, i), th)
+                for l in range(x_lastth, cols):
+                    thsurf.itemset((u, l), th)
     for y in range(0, rows):
         for x in range(0, cols):
             if img.item(y, x) >= thsurf.item(y, x):
-                output.itemset(y, x, 255)
+                output.itemset((y, x), 255)
             else:
-                output.itemset(y, x, 0)
+                output.itemset((y, x), 0)
     return output
 def otsu(img):
     blur = cv2.GaussianBlur(img, (5, 5), 0)

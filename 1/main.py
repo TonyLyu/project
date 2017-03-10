@@ -13,7 +13,8 @@ imgplates = detector.detect(img)
 if len(imgplates) != 0:
     for imgplate in imgplates:
         k = 0
-        bin_img = bin.Wolf(imgplate, 1, 18, 18, 0.05 + (k * 0.35), 128)
+        cv2.imshow('just', imgplate)
+        bin_img = bin.Wolf(imgplate, 3, 18, 18, 0.05 + (k * 0.35), 128)
         bin_img = cv2.bitwise_not(bin_img)
         cv2.imshow('plate', bin_img)
     cv2.waitKey(0)
