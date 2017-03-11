@@ -9,6 +9,9 @@ def characteranalysis(img):
     bin_img = bin.Wolf(img, 3, 18, 18, 0.05 + (k * 0.35), 128)
     bin_img = cv2.bitwise_not(bin_img)
     tc = textcontours(bin_img, img)
+    for i in range(0, len(bin_img)):
+        tc = filterContourHoles(bin_img, tc)
+    
 
 def filter(threshold, tc):
     rows, cols = threshold.shape[:2]
@@ -19,7 +22,23 @@ def filter(threshold, tc):
     bestFitScore = -1
     for i in range(0, num_steps):
         for z in range(0, len(tc)):
-            k = 0
+            tc.goodIndices[z] = True
+        tc = filterByBoxSize(tc, starting_min_height + (i * height_step), starting_max_height + (i * height_step))
+        goodIndices = tc.getGoodInicesCount()
+        if goodIndices == 0 or goodIndices < bestFitScore:
+            continue
+        tc = filterContourHoles(tc)
+        goodIndices = tc.getGoodInicesCount()
+        if goodIndices == 0 or goodIndices <= bestFitScore:
+            continue
+        segmentConut = tc.getGoodInicesCount()
+        if segmentConut > bestFitScore:
+            bestFitScore = segmentConut
+            bestIndices = tc.getIndicesCopy()
+    tc.setIndices(bestIndices)
+    return tc
+
+
 
 def filterByBoxSize(tc, minHeightPx, maxHeightPx):
     larger_char_height_mm = 70.0
@@ -32,7 +51,24 @@ def filterByBoxSize(tc, minHeightPx, maxHeightPx):
         tc.goodIndices[i] == False
         x, y, width, height = cv2.boundingRect(tc.contours[i])
         minWidth = height * 0.2
+        if height >= minHeightPx and height <= maxHeightPx and width > minWidth:
+            charAspect = float(width) / float (height)
+            if abs(charAspect - idealAspect) < aspecttolerance:
+                tc.goodIndices[i] = True
 
+    return tc
+
+def filterContourHoles(tc):
+    for i in range(0, len(tc)):
+        if tc.goodIndices[i] == False:
+            continue
+        tc.goodIndices[i] = False
+        parentIndex = tc.hierarchy[i][3]
+        if parentIndex >= 0 and tc.goodIndices[parentIndex]:
+            continue
+        else:
+            tc.goodIndices[i] = True
+    return tc
 # def findOuterBoxMask(contours, hierarchy, thresh):
 #     min_parent_are = 100 * 100 * 0.10
 #     winningIndex = -1
@@ -72,4 +108,3 @@ def filterByBoxSize(tc, minHeightPx, maxHeightPx):
 #             lowestArea = boxarea
 #
 #     if(winningIndex != -1 and bestCharCount >=3):
-
