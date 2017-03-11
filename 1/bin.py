@@ -60,10 +60,8 @@ def Wolf(img, version, winx, winy, k, dR):
     map_m = np.zeros((rows, cols), dtype=float)
     map_s = np.zeros((rows, cols), dtype=float)
     max_s, map_m, map_s, img = calcLocalStats(img, map_m, map_s, winx, winy)
-    print max_s
     #Finds the global minimum and maximum in an array
     min_I, max_I, _, _ = cv2.minMaxLoc(img)
-    print max_I
     #
     # for i in range(0, map_s.shape[0]):
     #     for j in range(0, map_s.shape[1]):
@@ -81,7 +79,6 @@ def Wolf(img, version, winx, winy, k, dR):
                 th = m * (1 + k*(s / dR - 1))
             else:
                 th = m + k * (s / max_s - 1) * (m-min_I)
-                print k
             thsurf.itemset((j, i+wxh), th)
             if i == 0:
                 for l in range(0, x_firstth+1):
