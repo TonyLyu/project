@@ -61,7 +61,19 @@ class platemask:
             contoursSecondRound = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             biggestContourIndex = -1
             largesArea = 0.0
-
+            for c in range(0, len(contoursSecondRound)):
+                area = cv2.contourArea(contoursSecondRound[c])
+                if area > largestArea:
+                    biggestContourIndex = c
+                    largestArea = area
+            if biggestContourIndex != -1:
+                mask = np.zeros((thresholds[winningIndex].shape[0],thresholds[winningIndex].shape[1]), dtype = unit8)
+                smoothedMaskPoints = cv2.approxPolyDP(contoursSecondRound[biggestContourIndex], 2, True)
+                tempvec = []
+                tempvec.append(smoothedMaskPoints)
+                cv2.drawContours(mask, tempvec, 0, (255, 255, 255), cv2.FILLED, 8, contours[winningIndex].hierarchy, 0)
+            
+                
 
 
 
