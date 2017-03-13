@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 class platemask:
+
     def __init__(self, thresholds):
         self.hasplatemask = False
         self.thresholds = thresholds
@@ -9,7 +10,7 @@ class platemask:
         return self.platemask
     def findOuterBoxMask(self, contours):
 
-        min_parent_area = 100 * 100 * 0.10
+        min_parent_area = 120 * 60 * 0.10
         winningIndex = -1
         winningParentId = -1
         bestCharCount = 0
@@ -48,7 +49,7 @@ class platemask:
                 winningParentId = bestParentId
                 lowestArea = boxarea
         if winningIndex != -1 and bestCharCount >= 3:
-            mask = np.zeros(len(self.thresholds[winningIndex]), dtype = "unit8")
+            mask = np.zeros(len(self.thresholds[winningIndex]), dtype = 'uint8')
             cv2.drawContours(mask, contours[winningIndex].contours, winningParentId,
                              (255, 255, 255),cv2.FILLED, 8, contours[winningIndex].hierarchy,
                              0)
@@ -67,36 +68,15 @@ class platemask:
                     biggestContourIndex = c
                     largestArea = area
             if biggestContourIndex != -1:
-                mask = np.zeros((thresholds[winningIndex].shape[0],thresholds[winningIndex].shape[1]), dtype = unit8)
+                mask = np.zeros((self.thresholds[winningIndex].shape[0], self.thresholds[winningIndex].shape[1]), dtype = 'uint8')
                 smoothedMaskPoints = cv2.approxPolyDP(contoursSecondRound[biggestContourIndex], 2, True)
                 tempvec = []
                 tempvec.append(smoothedMaskPoints)
                 cv2.drawContours(mask, tempvec, 0, (255, 255, 255), cv2.FILLED, 8, contours[winningIndex].hierarchy, 0)
-            
-                
-
-
-
-        i = 0
-        while(i < len(contours)):
-            charsRecognized = charsRecognized + 1
-            parentId = hierarchy[i][3]
-            hasParent = True
-            charsRecognizedInContours[parentId] = + charsRecognizedInContours[parentId] + 1
-            j = 0
-            while(j < len(contours)):
-                if(charsRecognizedInContours[i] > charsRecognized):
-                    charsRecognized = charsRecognizedInContours[i]
-                    bestParentId = i
-                j = j + 1
-
-            boxarea = cv2.contourArea()
-            if(boxarea < min_parent_are):
-                continue
-            if((charsRecognized > bestCharCount) or (charsRecognized == bestCharCount and boxarea < lowestArea)):
-                bestCharCount = charsRecognized
-                winningIndex = i
-                winningParentId = bestParentId
-                lowestArea = boxarea
-#
-
+            self.hasplatemask = True
+            self.plateMask = mask
+        else:
+            self.hasplatemask = False
+            fullMask = np.zeros(self.thresholds[0].shape[0], self.thresholds[0].shape[1], dtype="uint8")
+            fullMask = cv2.bitwise_not(fullMask)
+            self.plateMask = fullMask
