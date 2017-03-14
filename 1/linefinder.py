@@ -1,6 +1,7 @@
 import cv2
 import textcontours
 import math
+import sys
 class CharPointInfo:
     def __init__(self, contour, index):
         self.contourIndex = index
@@ -134,6 +135,7 @@ class LineSegment:
             self.slope = float(self.p2[1] - self.p1[1]) / float(self.p2[0] - self.p2[0])
         self.length = distanceBetweenPoints(self.p1, self.p2)
         self.angle = angleBetweenPoints(self.p1, self.p2)
+
     def getParalleLine(self, distance):
         diff_x = self.p2[0] - self.p1[0]
         diff_y = self.p2[1] - self.p1[1]
@@ -148,6 +150,43 @@ class LineSegment:
     def getPointAt(self, x):
         return self.slope * (x - self.p2[1]) + self.p2[1]
 
+    def closestPointOnSegmentTo(self, p):
+        top = (p[0] - self.p1[0]) * (self.p2[0] - self.p1[0]) + (p[1] - self.p1[1]) * (self.p2[1] - self.p1[1])
+        bottom = distanceBetweenPoints(self.p2, self.p1)
+        u = float(top) / bottom
+        x = self.p1[0] + u * (self.p2[0] - self.p1[0])
+        y = self.p1[1] + u * (self.p2[1] - self.p1[1])
+        return (x, y)
+
+    def isPointBelowLine(self, tp):
+        return ((self.p2[0] - self.p1[0]) * (tp[1] - self.p1[1]) -
+                (self.p2[1] - self.p1[1]) * (tp[0] - self.p1[0])) > 0
+
+    def midpoint(self):
+        if self.p1[0] == self.p2[0]:
+            ydiff = self.p2[1] - self.p1[1]
+            y = self.p1[1] + (float(ydiff) / 2)
+        diff = self.p2[0] - self.p1[0]
+        midX = float(self.p1[0]) + (float(diff) / 2)
+        midY = self.getPointAt(midX)
+        return (midX, midY)
+
+    def intersection(self, line):
+        intersection_X = -1
+        intersection_Y = -1
+        c1 = self.p1[1] - self.slope * self.p1[0]
+        c2 = line.p2[1] - line.slope * line.p2[0]
+        if (self.slope - line.slope) == 0:
+            k = 0
+        elif self.p1[0] == self.p2[0]:
+            return (self.p1[0], line.getPointAt(self.p1[0]))
+        elif line.p1[0] == line.p2[0]:
+            return (line.p1[0], self.getPointAt(line.p1[0]))
+        else:
+            intersection_X = (c1 - c2) / (self.slope - line.slope)
+            intersection_Y = self.slope * intersection_X + c1
+
+        return (intersection_X, intersection_Y)
 def distanceBetweenPoints(p1, p2):
     asquared = float(p2[0] - p1[0]) * (p2[0] - p1[0])
     bsquared = float(p2[1] - p1[1]) * (p2[1] - p1[1])
@@ -158,3 +197,25 @@ def angleBetweenPoints(p1, p2):
     deltaX = int(p2[0] - p1[0])
     return math.atan2(float(deltaY), float(deltaX) * (180 / math.pi)
     )
+def findClosestPoint(polygon_points, num_points, position):
+
+    closest_point_index = 0
+    smallest_distance = sys.maxint
+    for i in range(0, num_points):
+        pos = (int(polygon_points[i][0]), int(polygon_points[i][1]))
+        distance = distanceBetweenPoints(pos, position)
+        if distance < smallest_distance:
+            smallest_distance = distance
+            closest_point_index = i
+    return (int(polygon_points[closest_point_index][0]), int(polygon_points[closest_point_index][1]))
+
+
+def sortPolygonPoints(polygon_points, surrounding_image):
+    height, width = surrounding_image
+    return_points = []
+    return_points.append(findClosestPoint(polygon_points, 4, (0, 0)))
+    return_points.append(findClosestPoint(polygon_points, 4, (width, 0)))
+    return_points.append(findClosestPoint(polygon_points, 4, (width, height)))
+    return_points.append(findClosestPoint(polygon_points, 4, (0, height)))
+
+    return return_points

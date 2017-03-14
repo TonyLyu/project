@@ -4,7 +4,11 @@ import bin
 import textcontours
 import platemask
 import linefinder
+import textline
+from operator import attrgetter
 
+def getKey(item):
+    return item.topLine.p1[1]
 def characteranalysis(img):
     k = 0
     bin_img = bin.Wolf(img, 3, 18, 18, 0.05 + (k * 0.35), 128)
@@ -48,7 +52,32 @@ def characteranalysis(img):
                                             linePolygon[2][0], linePolygon[2][1])
         textArea = getCharArea(topLine, bottomLine, bestContours)
 
-        
+        textLine = textline.TextLine(textArea, linePolygon, img.shape[1], img.shape[0])
+        tempTextLines.append(textline)
+    bestContours = filterBetweenLines(bestThreshold, bestContours, tempTextLines)
+    tempTextLines = sorted(tempTextLines, key=getKey)
+    ###textliens###
+    textLines = []
+    #################
+    rows, cols = img.shape
+    for i in range(0, len(tempTextLines)):
+        updatedTextArea = getCharArea(tempTextLines[i].topLine, tempTextLines[i].bottomLine)
+        linePolygon = tempTextLines[i].linePolygon
+        if len(updatedTextArea) > 0 and len(linePolygon) > 0:
+            textLines.append(textline.TextLine(updatedTextArea, linePolygon, cols, rows))
+    if len(textLines) > 0:
+        confidenceDrainers = 0
+        charSegmentCount = bestContours.getGoodIndicesCount()
+        if charSegmentCount == 1:
+            confidenceDrainers += 91
+        elif charSegmentCount < 5:
+            confidenceDrainers += (5 - charSegmentCount) * 10
+        absangle = abs(textLines[0].topLine.angle)
+        if absangle > 15:
+            confidenceDrainers += 91
+        elif absangle > 1:
+            confidenceDrainers += absangle
+
     return bin_img
 
 def filter(threshold, tc):
@@ -166,6 +195,53 @@ def getCharArea(topLine, bottomLine, bestContours):
         charArea.append(br)
         charArea.append(bl)
     return charArea
+
+def filterBetweenLines(img, textContours, textLines):
+    min_area_percent_within_lines = 0.88
+    max_distance_percent_from_lines = 0.15
+    if len(textLines) == 0:
+        return
+    validPoints = []
+    rows, cols = img.shape
+    outerMask = np.zeros((rows, cols), dtype="uint8")
+    for i in range(0, len(textLines)):
+        cv2.fillConvexPoly(outerMask, textLines[i].linePolygon, len(textLines[i].linePolygon), (255, 255, 255))
+    for i in range(0, len(textcontours)):
+        if textcontours.goodIndices[i] == False:
+            continue
+        percentInsideMask = getContourAreaPercentInsideMask(outerMask,
+                                                            textcontours.contours,
+                                                            textcontours.hierarchy,
+                                                            i)
+        if percentInsideMask < min_area_percent_within_lines:
+            textcontours.goodIndices[i] = False
+            continue
+        x, y, w, h = cv2.boundingRect(textcontours.contours[i])
+        xmiddle = int(x + (w / 2))
+        topMiddle = (xmiddle, y)
+        botMiddle = (xmiddle, y + h)
+
+        for i in range(0, len(textLines)):
+            closetTopPoint = textLines[i].topLine.closestPointOnSegmentTo(topMiddle)
+            closetBottomPoint = textLines[i].bottomLine.closestPointOnSegmentTo(botMiddle)
+            absTopDistance = linefinder.distanceBetweenPoints(closetTopPoint, topMiddle)
+            absBottomDistance = linefinder.distanceBetweenPoints(closetBottomPoint, botMiddle)
+            maxDistance = textLines[i].lineHeight * max_distance_percent_from_lines
+            if absTopDistance < maxDistance and absBottomDistance < maxDistance:
+                a = 0
+            else:
+                textLines.goodIndices[i] = False
+    return textcontours
+
+
+def getContourAreaPercentInsideMask(mask, contours, hierarchy, contourIndex):
+    innerArea = np.zeros((mask.shape[0],mask.shape[1]), dtype="uint8")
+    cv2.drawContours(innerArea, contours, contourIndex,
+                     (255, 255, 255), cv2.FILLED, 8, hierarchy, 2)
+    startingPixels = cv2.countNonZero(innerArea)
+    innerArea = cv2.bitwise_and(innerArea, mask)
+    endingPixels = cv2.countNonZero(innerArea)
+    return (float(endingPixels) / float(startingPixels))
 # def findOuterBoxMask(contours, hierarchy, thresh):
 #     min_parent_are = 100 * 100 * 0.10
 #     winningIndex = -1
