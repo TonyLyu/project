@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import linefinder
 class Transformation:
     def __init__(self, bigImage, smallImage, x, y, width, height):
@@ -60,5 +61,6 @@ class Transformation:
         return deskewed
 
     def remapSmallPointstoCrop(self, smallPoints, transformationMatrix):
+        smallPoints = np.float32(smallPoints)
         remappedPoints = cv2.perspectiveTransform(smallPoints, transformationMatrix)
         return remappedPoints

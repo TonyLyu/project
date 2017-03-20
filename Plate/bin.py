@@ -2,6 +2,23 @@ import cv2
 import numpy as np
 import math
 
+def produceThresholds(crop_img):
+
+    thresholds = []
+
+    threshold0 = Wolf(crop_img, 3, 18, 18, 0.05 + (0 * 0.35), 128)
+    threshold0 = cv2.bitwise_not(threshold0)
+    thresholds.append(threshold0)
+    threshold1 = Wolf(crop_img, 3, 22, 22, 0.05 + (1 * 0.35), 128)
+    threshold1 = cv2.bitwise_not(threshold1)
+    thresholds.append(threshold1)
+    threshold2 = Wolf(crop_img, 2, 12, 12, 0.18, 128)
+    threshold2 = cv2.bitwise_not(threshold2)
+    thresholds.append(threshold2)
+
+    return thresholds
+
+
 def calcLocalStats(im, map_m, map_s, winx, winy):
     rows, cols = im.shape
     im_sum, im_sum_sq = cv2.integral2(im, sqdepth=cv2.CV_64F)
@@ -41,7 +58,8 @@ def calcLocalStats(im, map_m, map_s, winx, winy):
             map_s.itemset((j, i+wxh), s)
     return max_s, map_m, map_s, im
 
-def Wolf(img, version, winx, winy, k, dR):
+def Wolf(image, version, winx, winy, k, dR):
+    img = image
     m = 0.0
     max_s = 0.0
     th = 0
@@ -55,8 +73,8 @@ def Wolf(img, version, winx, winy, k, dR):
     rows, cols = img.shape[:2]
     #output = np.zeros((rows, cols), np.uint8)
     output = np.uint8(img)
-    print img.dtype
-    print rows, cols
+    # print img.dtype
+    # print rows, cols
     map_m = np.zeros((rows, cols), dtype=float)
     map_s = np.zeros((rows, cols), dtype=float)
     max_s, map_m, map_s, img = calcLocalStats(img, map_m, map_s, winx, winy)
@@ -119,6 +137,7 @@ def Wolf(img, version, winx, winy, k, dR):
             else:
                 output.itemset((y, x), 0)
     return output
+
 def otsu(img):
     blur = cv2.GaussianBlur(img, (5, 5), 0)
     ret3, th3 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)

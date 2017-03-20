@@ -27,6 +27,7 @@ class TextLineColeection:
 
         self.findCenterHorizontal()
         self.findCenterVertical()
+
     def findCenterHorizontal(self):
         leftP1 = self.shorterSegment.closestPointOnSegmentTo(self.longerSegment.p1)
         leftP2 = self.longerSegment.p1
@@ -37,6 +38,7 @@ class TextLineColeection:
         right = linefinder.LineSegment(rightP1, rightp2)
         rightMidpoint = right.midpoint()
         self.centerHorizontalLine = linefinder.LineSegment(leftMidpoint, rightMidpoint)
+
     def findCenterVertical(self):
         p1 = self.longerSegment.midpoint()
         p2 = self.shorterSegment.closestPointOnSegmentTo(p1)
@@ -45,17 +47,32 @@ class TextLineColeection:
         else:
             self.centerVerticalLine = linefinder.LineSegment(p2, p1)
     def isLeftOfText(self, line):
-        leftSide = linefinder.LineSegment(self.bottomCharArea.p1, topCharArea.p1)
+        leftSide = linefinder.LineSegment(self.bottomCharArea.p1, self.topCharArea.p1)
         topLeft = line.closestPointOnSegmentTo(leftSide.p2)
         bottomLeft = line.closestPointOnSegmentTo(leftSide.p1)
-        lineIsAboveLeft = (not leftSide.isPointBelowLine(topLeft)) && (not leftSide.isPointBelowLine(bottomLeft))
+        lineIsAboveLeft = (not leftSide.isPointBelowLine(topLeft)) and (not leftSide.isPointBelowLine(bottomLeft))
         if lineIsAboveLeft:
             return 1
-        rightSide = LineSegment(self.bottomCharArea.p2, self.topCharArea.p2)
+        rightSide = linefinder.LineSegment(self.bottomCharArea.p2, self.topCharArea.p2)
         topRight = line.closestPointOnSegmentTo(rightSide.p2)
         bottomRight = line.closestPointOnSegmentTo(rightSide.p1)
 
-        lineIsBelowRight = rightSide.isPointBelowLine(topRight) and isPointBelowLine(bottomRight)
+        lineIsBelowRight = rightSide.isPointBelowLine(topRight) and rightSide.isPointBelowLine(bottomRight)
         if lineIsBelowRight:
             return -1
         return 0
+    def isAboveText(self, line):
+        topLeft = line.closestPointOnSegmentTo(self.topCharArea.p1)
+        topRight = line.closestPointOnSegmentTo(self.topCharArea.p2)
+        lineIsBelowTop = self.topCharArea.isPointBelowLine(topLeft) or self.topCharArea.isPointBelowLine(topRight)
+        if not lineIsBelowTop:
+            return 1
+        bottomLeft = line.closestPointOnSegmentTo(self.bottomCharArea.p1)
+        bottomRight = line.closestPointOnSegmentTo(self.bottomCharArea.p2)
+
+        lineIsBelowBottom = self.bottomCharArea.isPointBelowLine(bottomLeft) and self.bottomCharArea.isPointBelowLine(bottomRight)
+        if lineIsBelowBottom:
+            return -1
+        return 0
+
+

@@ -4,6 +4,7 @@ import transformation
 import textline
 import platelines
 from textlinecollection import TextLineColeection
+from platecorners import PlateCorners
 
 class EdgeFinder:
     def __init__(self, img_data):
@@ -12,6 +13,11 @@ class EdgeFinder:
         high_contrast = self.is_high_contrast(self.img_data.crop_gray)
         returnPoints = []
         if high_contrast:
+            returnPoints = self.detection(True)
+        if (not high_contrast) or len(returnPoints) == 0:
+            returnPoints = self.detection(False)
+
+        return returnPoints
 
     def detection(self, high_contrast):
         tlc = TextLineColeection(self.img_data.textLines)
@@ -82,10 +88,26 @@ class EdgeFinder:
                 smallPlateCorners = self.highContrastDetection(newCrop, newLines)
             else:
                 smallPlateCorners = self.normalDetection(newCrop, newLines)
+
+            imgArea = []
+            imgArea.append((0, 0))
+            imgArea.append((newCrop.shape[1], 0))
+            imgArea.append((newCrop.shape[1], newCrop.shape[0]))
+            imgArea.append((0, newCrop.shape[0]))
+            newCropTransmtx = imgTransform.getTransformationMatrix2(imgArea, remappedCorners)
+            cornersInOriginalImg = []
+            if len(smallPlateCorners) > 0:
+                cornersInOriginalImg = imgTransform.remapSmallPointstoCrop(smallPlateCorners, newCropTransmtx)
+
+            return cornersInOriginalImg
+
+
     def normalDetection(self, newCrop, newLines):
         plateLines = platelines.PlateLines(self.img_data)
         plateLines.preocessImage(newCrop, newLines, 1.05)
+        cornerFinder = PlateCorners(newCrop, plateLines, self.img_data, newLines)
 
+        return cornerFinder.findPlateCorners()
 
 
     def highContrastDetection(self, newCrop, newLines):

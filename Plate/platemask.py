@@ -6,8 +6,10 @@ class platemask:
     def __init__(self, thresholds):
         self.hasplatemask = False
         self.thresholds = thresholds
+        self.plateMask = None
+
     def getMask(self):
-        return self.platemask
+        return self.plateMask
     def findOuterBoxMask(self, contours):
 
         min_parent_area = 120 * 60 * 0.10
@@ -24,7 +26,7 @@ class platemask:
             hasParent = False
 
             bestParentId = -1
-            charsRecognizedInContours = np.zeros(len(contours[imgIndex]).goodIndices)
+            charsRecognizedInContours = np.zeros(len(contours[imgIndex].goodIndices))
             for i in range(0, len(contours[imgIndex].goodIndices)):
                 if contours[imgIndex].goodIndices[i]:
                     charsRecognized += 1
@@ -61,7 +63,7 @@ class platemask:
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, element)
             contoursSecondRound = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             biggestContourIndex = -1
-            largesArea = 0.0
+            largestArea = 0.0
             for c in range(0, len(contoursSecondRound)):
                 area = cv2.contourArea(contoursSecondRound[c])
                 if area > largestArea:
@@ -77,6 +79,6 @@ class platemask:
             self.plateMask = mask
         else:
             self.hasplatemask = False
-            fullMask = np.zeros(self.thresholds[0].shape[0], self.thresholds[0].shape[1], dtype="uint8")
+            fullMask = np.zeros((self.thresholds[0].shape[0], self.thresholds[0].shape[1]), dtype="uint8")
             fullMask = cv2.bitwise_not(fullMask)
             self.plateMask = fullMask

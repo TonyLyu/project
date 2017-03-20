@@ -9,19 +9,18 @@ from operator import attrgetter
 
 def getKey(item):
     return item.topLine.p1[1]
-def characteranalysis(img):
-    k = 0
-    bin_img = bin.Wolf(img, 3, 18, 18, 0.05 + (k * 0.35), 128)
-    bin_img = cv2.bitwise_not(bin_img)
+def characteranalysis(img, bin_img):
+
+
     allTextContours = []
     for i in range(0, len(bin_img)):
-        tc = textcontours(bin_img, img)
+        tc = textcontours.textcontours(bin_img[i], img)
         allTextContours.append(tc)
     for i in range(0, len(bin_img)):
         # some problems
-        tc = filter(bin_img, allTextContours[i])
+        tc = filter(bin_img[i], allTextContours[i])
 
-    plateMask = platemask(bin_img)
+    plateMask = platemask.platemask(bin_img)
     plateMask.findOuterBoxMask(allTextContours)
     hasPlateBorder = plateMask.hasplatemask
     plateBorderMask = plateMask.getMask()
@@ -30,6 +29,12 @@ def characteranalysis(img):
             allTextContours[i] = filterByOuterMask(allTextContours[i])
     bestFitScore = -1
     bestFitIndex = -1
+
+    #################################
+    bestThreshold = None
+    bestContours = None
+    #################################
+
     for i in range(0, len(bin_img)):
         segmentCount = allTextContours[i].getGoodIndicesCount()
         if segmentCount > bestFitScore:
@@ -88,10 +93,10 @@ def filter(threshold, tc):
     num_steps = 4
     bestFitScore = -1
     for i in range(0, num_steps):
-        for z in range(0, len(tc)):
+        for z in range(0, tc.size()):
             tc.goodIndices[z] = True
         tc = filterByBoxSize(tc, starting_min_height + (i * height_step), starting_max_height + (i * height_step))
-        goodIndices = tc.getGoodInicesCount()
+        goodIndices = tc.getGoodIndicesCount()
         if goodIndices == 0 or goodIndices < bestFitScore:
             continue
         tc = filterContourHoles(tc)
@@ -112,7 +117,7 @@ def filterByBoxSize(tc, minHeightPx, maxHeightPx):
     larger_char_width_mm = 35.0
     idealAspect = larger_char_width_mm / larger_char_height_mm
     aspecttolerance = 0.25
-    for i in range(0, len(tc)):
+    for i in range(0, tc.size()):
         if tc.goodIndices[i] == False:
             continue
         tc.goodIndices[i] == False
@@ -126,11 +131,12 @@ def filterByBoxSize(tc, minHeightPx, maxHeightPx):
     return tc
 
 def filterContourHoles(tc):
-    for i in range(0, len(tc)):
+    for i in range(0, tc.size()):
         if tc.goodIndices[i] == False:
             continue
         tc.goodIndices[i] = False
         parentIndex = tc.hierarchy[i][3]
+        print tc.goodIndices
         if parentIndex >= 0 and tc.goodIndices[parentIndex]:
             continue
         else:

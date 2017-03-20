@@ -9,13 +9,15 @@ class textcontours:
         self.img = img
         self.weight = cols
         self.height = rows
-        self.threshhold = threshold
+        self.threshold = threshold
+        self.goodIndices = []
+        self.getTextcontours()
 
     def getTextcontours(self):
-        img2, self.contours, self.hierarchy = cv2.findContours(self.threshgold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        img2, self.contours, self.hierarchy = cv2.findContours(self.threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for i in range(0, len(self.contours)):
             self.goodIndices.append(True)
-        drawContours(self)
+        self.drawContours()
         return self
 
     def drawContours(self):
@@ -43,7 +45,8 @@ class textcontours:
                 self.goodIndices[i] = newIndices[i]
         else:
             print("error")
-
+    def size(self):
+        return len(self.contours)
 
 
 weight = 0

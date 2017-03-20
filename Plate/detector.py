@@ -31,12 +31,13 @@ def expandRect(img, expandXPixels, expandYPixels, maxX, maxY):
         expandRegion[2] = maxX - expandRegion[0]
     if(expandRegion[1] + expandRegion[3] > maxY):
         expandRegion[3] = maxY - expandRegion[1]
+
     return expandRegion
 
 
-def produceThresholds(img):
-    threshhold = bin.otsu(img)
-    return threshhold
+# def produceThreshold(img):
+#     threshhold = bin.otsu(img)
+#     return threshhold
 
 
 def analysis(thresh):
