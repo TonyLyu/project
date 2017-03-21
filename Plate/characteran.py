@@ -5,20 +5,27 @@ import textcontours
 import platemask
 import linefinder
 import textline
+import copy
 from operator import attrgetter
 
 def getKey(item):
     return item.topLine.p1[1]
+
+
 def characteranalysis(img, bin_img):
 
 
+    b_img = copy.deepcopy(bin_img)
     allTextContours = []
     for i in range(0, len(bin_img)):
-        tc = textcontours.textcontours(bin_img[i], img)
+        tc = textcontours.textcontours(b_img[i], img)
         allTextContours.append(tc)
+
+    b_img = copy.deepcopy(bin_img)
+
     for i in range(0, len(bin_img)):
         # some problems
-        tc = filter(bin_img[i], allTextContours[i])
+        allTextContours[i] = filter(b_img[i], allTextContours[i])
 
     plateMask = platemask.platemask(bin_img)
     plateMask.findOuterBoxMask(allTextContours)
@@ -41,13 +48,17 @@ def characteranalysis(img, bin_img):
             bestFitScore = segmentCount
             bestFitIndex = i
             bestThreshold = bin_img[i]
-            bestContours = allTextContours[i];
+            bestContours = allTextContours[i]
     if bestFitScore <= 1:
         print "low best fit score"
-    img_contours = bestContours.drawContours()
+        return None
+    cv2.imshow("bestThreshold", bestThreshold)
+    cv2.waitKey(0)
+    img_contours = bestContours.drawContours(bestThreshold)
     cv2.imshow("Matching Contours", img_contours)
+    cv2.waitKey(0)
     lf = linefinder.LineFinder(img)
-    linePolygons = lf.findLines(bin_img, bestContours)
+    linePolygons = lf.findLines(img, bestContours)
     tempTextLines = []
     for i in range(0, len(linePolygons)):
         linePolygon = linePolygons[i]
@@ -92,21 +103,26 @@ def filter(threshold, tc):
     height_step = round(rows * 0.1)
     num_steps = 4
     bestFitScore = -1
+
+    bestIndices = []
     for i in range(0, num_steps):
-        for z in range(0, tc.size()):
+        l = tc.size()
+        for z in range(0, l):
             tc.goodIndices[z] = True
         tc = filterByBoxSize(tc, starting_min_height + (i * height_step), starting_max_height + (i * height_step))
         goodIndices = tc.getGoodIndicesCount()
-        if goodIndices == 0 or goodIndices < bestFitScore:
-            continue
-        tc = filterContourHoles(tc)
-        goodIndices = tc.getGoodInicesCount()
         if goodIndices == 0 or goodIndices <= bestFitScore:
             continue
-        segmentConut = tc.getGoodInicesCount()
-        if segmentConut > bestFitScore:
-            bestFitScore = segmentConut
+        tc = filterContourHoles(tc)
+        goodIndices = tc.getGoodIndicesCount()
+        if goodIndices == 0 or goodIndices <= bestFitScore:
+            continue
+        segmentCount = tc.getGoodIndicesCount()
+        if segmentCount > bestFitScore:
+
+            bestFitScore = segmentCount
             bestIndices = tc.getIndicesCopy()
+
     tc.setIndices(bestIndices)
     return tc
 
@@ -120,7 +136,7 @@ def filterByBoxSize(tc, minHeightPx, maxHeightPx):
     for i in range(0, tc.size()):
         if tc.goodIndices[i] == False:
             continue
-        tc.goodIndices[i] == False
+        tc.goodIndices[i] = False
         x, y, width, height = cv2.boundingRect(tc.contours[i])
         minWidth = height * 0.2
         if height >= minHeightPx and height <= maxHeightPx and width > minWidth:
@@ -135,10 +151,10 @@ def filterContourHoles(tc):
         if tc.goodIndices[i] == False:
             continue
         tc.goodIndices[i] = False
-        parentIndex = tc.hierarchy[i][3]
-        print tc.goodIndices
+        parentIndex = tc.hierarchy[0][i][3]
+
         if parentIndex >= 0 and tc.goodIndices[parentIndex]:
-            continue
+            k = 0
         else:
             tc.goodIndices[i] = True
     return tc

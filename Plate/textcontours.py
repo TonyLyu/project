@@ -1,6 +1,6 @@
 import cv2
-
-
+import copy
+import numpy as np
 
 
 class textcontours:
@@ -14,16 +14,21 @@ class textcontours:
         self.getTextcontours()
 
     def getTextcontours(self):
-        img2, self.contours, self.hierarchy = cv2.findContours(self.threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        tempThreshold = copy.deepcopy(self.threshold)
+        img2, self.contours, self.hierarchy = cv2.findContours(tempThreshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for i in range(0, len(self.contours)):
             self.goodIndices.append(True)
-        self.drawContours()
-        return self
 
-    def drawContours(self):
-        img = cv2.cvtColor(self.img, cv2.COLOR_GRAY2RGB)
+    def drawContours(self, image):
+        img =  np.zeros((image.shape[0], image.shape[1]), np.uint8)
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        allowedContours = []
+        for i in range(0, len(self.contours)):
+            if self.goodIndices[i]:
+                allowedContours.append(self.contours[i])
         cv2.drawContours(img, self.contours, -1, (0, 255, 0), 1)
-        cv2.imshow("contours", img)
+        cv2.drawContours(img, allowedContours, -1, (0, 255, 0), 1)
+        return img
 
     def getGoodIndicesCount(self):
         count = 0
@@ -34,17 +39,17 @@ class textcontours:
 
     def getIndicesCopy(self):
         copyArray = []
-        for i in range(0, len(goodIndices)):
-            val = goodIndices[i]
+        for i in range(0, len(self.goodIndices)):
+            val = self.goodIndices[i]
             copyArray.append(val)
         return copyArray
 
     def setIndices(self, newIndices):
-        if(len(newIndices) == len(self.goodIndices)):
+        if len(newIndices) == len(self.goodIndices):
             for i in range(0, len(newIndices)):
                 self.goodIndices[i] = newIndices[i]
         else:
-            print("error")
+            print("error1")
     def size(self):
         return len(self.contours)
 

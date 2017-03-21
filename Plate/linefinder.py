@@ -22,7 +22,7 @@ class LineFinder:
         linesFound = []
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         charPoints = []
-        for i in range(0, len(contours)):
+        for i in range(0, contours.size()):
             if contours.goodIndices[i] == False:
                 continue
             charPoint = CharPointInfo(contours.contours[i], i)
@@ -51,8 +51,15 @@ class LineFinder:
                 else:
                     leftCPIndex = k
                     rightCPIndex = i
-                top = LineSegment(charPoints[leftCPIndex].top, charPoints[rightCPIndex].top)
-                bottom = LineSegment(charPoints[leftCPIndex].bottom, charPoints[rightCPIndex].bottom)
+                top = LineSegment(charPoints[leftCPIndex].top[0],
+                                  charPoints[leftCPIndex].top[1],
+                                  charPoints[rightCPIndex].top[0],
+                                  charPoints[rightCPIndex].top[1])
+                bottom = LineSegment(charPoints[leftCPIndex].bottom[0],
+                                     charPoints[leftCPIndex].bottom[1],
+                                     charPoints[rightCPIndex].bottom[0],
+                                     charPoints[rightCPIndex].bottom[1])
+
                 parallelBot = top.getParalleLine(medianCharHeight * -1)
                 parallelTop = bottom.getParalleLine(medianCharHeight)
                 if abs(top.angle) <= 15 and abs(parallelBot.angle) <= 15:
